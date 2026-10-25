@@ -260,6 +260,125 @@ print(json.dumps(solver.solve(), sort_keys=True))
     assert json.loads(first.stdout) == json.loads(second.stdout)
 
 
+def test_solver_detects_stagnation_window() -> None:
+    board = Board(3, [1, 2, 3, 4, 5, 6, 7, 0, 8])
+    solver = GeneticAlgorithmSolver(
+        initial_board=board,
+        population_size=6,
+        initial_chromosome_length=2,
+        max_generations=5,
+        crossover_rate=0.5,
+        mutation_rate=0.1,
+        tournament_size=2,
+        elites_count=1,
+        max_chromosome_length=8,
+        random_seed=9,
+        stagnation_window=2,
+        stagnation_threshold=0.0,
+        max_mutation_rate=0.5,
+        mutation_adaptation_enabled=True,
+    )
+
+    solver._last_best_fitness = 1.0
+    solver._stagnation_counter = 1
+    adaptive_rate = solver._update_stagnation_state(1.0)
+
+    assert adaptive_rate >= solver.mutation_rate
+    assert adaptive_rate <= solver.max_mutation_rate
+
+
+def test_solver_resets_stagnation_on_progress() -> None:
+    board = Board(3, [1, 2, 3, 4, 5, 6, 7, 0, 8])
+    solver = GeneticAlgorithmSolver(
+        initial_board=board,
+        population_size=6,
+        initial_chromosome_length=2,
+        max_generations=5,
+        crossover_rate=0.5,
+        mutation_rate=0.1,
+        tournament_size=2,
+        elites_count=1,
+        max_chromosome_length=8,
+        random_seed=9,
+        stagnation_window=2,
+        stagnation_threshold=1e-9,
+        max_mutation_rate=0.5,
+        mutation_adaptation_enabled=True,
+    )
+
+    solver._last_best_fitness = 1.0
+    solver._stagnation_counter = 1
+    solver._update_stagnation_state(1.5)
+
+    assert solver._stagnation_counter == 0
+    assert solver._effective_mutation_rate == solver.mutation_rate
+
+
+def test_solver_adaptive_mutation_respects_upper_bound() -> None:
+    board = Board(3, [1, 2, 3, 4, 5, 6, 7, 0, 8])
+    solver = GeneticAlgorithmSolver(
+        initial_board=board,
+        population_size=6,
+        initial_chromosome_length=2,
+        max_generations=5,
+        crossover_rate=0.5,
+        mutation_rate=0.1,
+        tournament_size=2,
+        elites_count=1,
+        max_chromosome_length=8,
+        random_seed=9,
+        stagnation_window=1,
+        stagnation_threshold=0.0,
+        max_mutation_rate=0.2,
+        mutation_adaptation_enabled=True,
+    )
+
+    solver._last_best_fitness = 1.0
+    solver._stagnation_counter = 1
+    adaptive_rate = solver._update_stagnation_state(1.0)
+
+    assert adaptive_rate <= solver.max_mutation_rate
+    assert adaptive_rate >= solver.mutation_rate
+
+
+def test_solver_seeded_reproducibility_is_preserved_with_adaptive_mutation() -> None:
+    board = Board(3, [1, 2, 3, 4, 5, 6, 7, 0, 8])
+    first = GeneticAlgorithmSolver(
+        initial_board=board,
+        population_size=8,
+        initial_chromosome_length=4,
+        max_generations=4,
+        crossover_rate=0.8,
+        mutation_rate=0.2,
+        tournament_size=2,
+        elites_count=1,
+        max_chromosome_length=8,
+        random_seed=42,
+        stagnation_window=2,
+        stagnation_threshold=1e-9,
+        max_mutation_rate=0.5,
+        mutation_adaptation_enabled=True,
+    )
+    second = GeneticAlgorithmSolver(
+        initial_board=board,
+        population_size=8,
+        initial_chromosome_length=4,
+        max_generations=4,
+        crossover_rate=0.8,
+        mutation_rate=0.2,
+        tournament_size=2,
+        elites_count=1,
+        max_chromosome_length=8,
+        random_seed=42,
+        stagnation_window=2,
+        stagnation_threshold=1e-9,
+        max_mutation_rate=0.5,
+        mutation_adaptation_enabled=True,
+    )
+
+    assert first.solve() == second.solve()
+
+
 def test_solver_time_limit_stops_without_real_wait(monkeypatch) -> None:
     board = Board(3, [1, 2, 3, 4, 5, 6, 7, 0, 8])
     solver = GeneticAlgorithmSolver(

@@ -8,6 +8,7 @@ from genetic_algorithm.operators import (
     crossover,
     elitism,
     mutate,
+    normalize_chromosome,
     tournament_selection,
 )
 from puzzle.board import Board
@@ -195,3 +196,30 @@ def test_tournament_selection_reproducible_with_rng() -> None:
     second = tournament_selection(population, Fitness(), tournament_size=2, rng=random.Random(1))
 
     assert first.chromosome == second.chromosome
+
+
+def test_normalize_chromosome_removes_inverse_pairs() -> None:
+    assert normalize_chromosome(["U", "D", "R", "L"]) == []
+    assert normalize_chromosome(["D", "U", "L", "R"]) == []
+    assert normalize_chromosome(["L", "R", "U"]) == ["U"]
+    assert normalize_chromosome([]) == []
+
+
+def test_normalize_chromosome_preserves_final_state_equivalence() -> None:
+    board = Board(3, [1, 2, 3, 4, 5, 6, 7, 0, 8])
+    original = Individual(["R", "L", "R"], board)
+    normalized = Individual(normalize_chromosome(original.chromosome), board)
+
+    assert original.simulate()["final_state"] == normalized.simulate()["final_state"]
+
+
+def test_normalize_chromosome_respects_max_length() -> None:
+    chromosome = ["U", "D", "R", "L", "U"]
+    assert normalize_chromosome(chromosome, max_length=2) == ["U"]
+
+
+def test_mutation_uses_normalized_sequence() -> None:
+    board = Board(3)
+    individual = Individual(["U", "D", "R"], board)
+    mutated = mutate(individual, mutation_rate=1.0, rng=random.Random(0), mutation_type="substitution")
+    assert len(mutated.chromosome) <= len(individual.chromosome)

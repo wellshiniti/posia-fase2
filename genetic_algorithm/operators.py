@@ -7,6 +7,37 @@ from typing import Callable, Optional, Sequence, Tuple
 from genetic_algorithm.individual import Individual, ORDERED_MOVES, VALID_MOVES
 
 
+INVERSE_MOVES = {
+    "U": "D",
+    "D": "U",
+    "L": "R",
+    "R": "L",
+}
+
+
+def normalize_chromosome(chromosome: Sequence[str], max_length: Optional[int] = None) -> list[str]:
+    """Remove pares adjacentes de movimentos inversos sem alterar o efeito final.
+
+    Essa normalização é aplicada antes de um cromossomo ser avaliado ou submetido
+    a mutação posterior para reduzir redundâncias simples como U-D e L-R.
+    Ela preserva a equivalência de estado do caminho para o mesmo tabuleiro inicial,
+    mas não tenta remover ciclos mais longos nem aplicar otimização global.
+    """
+    normalized: list[str] = []
+    for move in chromosome:
+        if move not in VALID_MOVES:
+            raise ValueError("Cromossomo contém movimentos inválidos.")
+        if normalized and INVERSE_MOVES.get(normalized[-1]) == move:
+            normalized.pop()
+            continue
+        normalized.append(move)
+
+    if max_length is not None and len(normalized) > max_length:
+        normalized = normalized[:max_length]
+
+    return normalized
+
+
 def tournament_selection(
     population: Sequence[Individual],
     evaluator: Callable[[Individual], float],
@@ -127,6 +158,7 @@ def mutate(
     if mutation_rate == 0 or generator.random() > mutation_rate:
         return mutated
 
+    mutated.chromosome = normalize_chromosome(mutated.chromosome, max_length=max_length)
     operation = mutation_type or generator.choice(available_operations)
 
     if operation == "substitution":

@@ -41,6 +41,10 @@ class GeneticAlgorithmSolver:
         max_generations: int = 100,
         time_limit: Optional[float] = None,
         random_seed: Optional[int] = None,
+        stagnation_window: int = 5,
+        stagnation_threshold: float = 1e-9,
+        max_mutation_rate: float = 0.5,
+        mutation_adaptation_enabled: bool = True,
     ) -> None:
         """Inicializa o resolvedor genético."""
         self.initial_board = self._validate_board(initial_board)
@@ -74,6 +78,17 @@ class GeneticAlgorithmSolver:
         self.rng = random.Random(random_seed)
         self.fitness = Fitness()
         self.best_individual: Optional[Individual] = None
+        self.stagnation_window = self._validate_positive_int(stagnation_window, "stagnation_window")
+        self.stagnation_threshold = self._validate_probability(stagnation_threshold, "stagnation_threshold")
+        self.max_mutation_rate = self._validate_probability(max_mutation_rate, "max_mutation_rate")
+        if self.max_mutation_rate < self.mutation_rate:
+            raise ValueError("max_mutation_rate deve ser maior ou igual a mutation_rate.")
+        if not isinstance(mutation_adaptation_enabled, bool):
+            raise ValueError("mutation_adaptation_enabled deve ser booleano.")
+        self.mutation_adaptation_enabled = mutation_adaptation_enabled
+        self._stagnation_counter = 0
+        self._last_best_fitness = None
+        self._effective_mutation_rate = self.mutation_rate
 
     @staticmethod
     def _validate_board(board: Board) -> Board:
@@ -107,6 +122,35 @@ class GeneticAlgorithmSolver:
         if not 0.0 <= value <= 1.0:
             raise ValueError(f"{name} deve estar entre 0 e 1.")
         return value
+
+    def _update_stagnation_state(self, best_fitness: float) -> float:
+        """Atualiza a contagem de estagnação e retorna a taxa efetiva de mutação."""
+        if not self.mutation_adaptation_enabled:
+            self._effective_mutation_rate = self.mutation_rate
+            return self.mutation_rate
+
+        if self._last_best_fitness is None:
+            self._last_best_fitness = best_fitness
+            self._stagnation_counter = 0
+            self._effective_mutation_rate = self.mutation_rate
+            return self._effective_mutation_rate
+
+        if best_fitness - self._last_best_fitness > self.stagnation_threshold:
+            self._last_best_fitness = best_fitness
+            self._stagnation_counter = 0
+            self._effective_mutation_rate = self.mutation_rate
+            return self._effective_mutation_rate
+
+        self._stagnation_counter += 1
+        if self._stagnation_counter < self.stagnation_window:
+            self._effective_mutation_rate = self.mutation_rate
+            return self._effective_mutation_rate
+
+        progress_step = max(0, self._stagnation_counter - self.stagnation_window + 1)
+        escalation = min(1.0, progress_step / max(1, self.stagnation_window))
+        delta = (self.max_mutation_rate - self.mutation_rate) * escalation
+        self._effective_mutation_rate = min(self.max_mutation_rate, self.mutation_rate + delta)
+        return self._effective_mutation_rate
 
     def _initialize_population(self) -> List[Individual]:
         """Cria uma população inicial compatível com o tabuleiro inicial."""
@@ -186,11 +230,13 @@ class GeneticAlgorithmSolver:
         self,
         population: Sequence[Individual],
         start_time: Optional[float] = None,
+        mutation_rate: Optional[float] = None,
     ) -> List[Individual]:
         """Gera uma nova população usando seleção, cruzamento, mutação e elitismo."""
         if self.time_limit is not None and start_time is not None and self._time_limit_reached(start_time):
             return [individual.copy() for individual in elitism(population, self.fitness.evaluate, self.elites_count)][: self.population_size]
 
+        effective_mutation_rate = self.mutation_rate if mutation_rate is None else mutation_rate
         elites = elitism(population, self.fitness.evaluate, self.elites_count)
         next_population: List[Individual] = elites[:]
 
@@ -227,7 +273,7 @@ class GeneticAlgorithmSolver:
 
             child_a = mutate(
                 child_a,
-                mutation_rate=self.mutation_rate,
+                mutation_rate=effective_mutation_rate,
                 max_length=self.max_chromosome_length,
                 rng=self.rng,
             )
@@ -236,7 +282,7 @@ class GeneticAlgorithmSolver:
 
             child_b = mutate(
                 child_b,
-                mutation_rate=self.mutation_rate,
+                mutation_rate=effective_mutation_rate,
                 max_length=self.max_chromosome_length,
                 rng=self.rng,
             )
@@ -325,7 +371,9 @@ class GeneticAlgorithmSolver:
 
             current_best = max(evaluations, key=lambda item: item[1])[0]
             current_best_result = current_best.simulate()
-            if self.best_individual is None or self.fitness.evaluate(current_best) > self.fitness.evaluate(self.best_individual):
+            current_best_score = self.fitness.evaluate(current_best)
+            adaptive_mutation_rate = self._update_stagnation_state(current_best_score)
+            if self.best_individual is None or current_best_score > self.fitness.evaluate(self.best_individual):
                 self.best_individual = current_best.copy()
 
             if current_best_result["solved"]:
@@ -342,7 +390,11 @@ class GeneticAlgorithmSolver:
                 stop_reason = "time_limit"
                 break
 
-            population = self._evolve_population(population, start_time=start_time)
+            population = self._evolve_population(
+                population,
+                start_time=start_time,
+                mutation_rate=adaptive_mutation_rate,
+            )
             if self._time_limit_reached(start_time):
                 stop_reason = "time_limit"
                 break
