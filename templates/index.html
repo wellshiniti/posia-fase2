@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>N-Puzzle Genetic Solver</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar panel">
+        <div class="brand-block">
+          <div class="brand-mark" aria-hidden="true">NS</div>
+          <div class="brand-copy">
+            <p class="eyebrow">Experimental Optimization</p>
+            <h1>N-Puzzle Genetic Solver</h1>
+          </div>
+        </div>
+
+        <div class="topbar-meta">
+          <span class="meta-chip meta-chip--soft">AI / heuristic search</span>
+          <span class="meta-chip meta-chip--accent">Experimental</span>
+        </div>
+      </header>
+
+      <main class="dashboard">
+        <section class="workspace-grid three-column-layout">
+          <aside class="panel settings-panel">
+            <div class="panel-header compact">
+              <div>
+                <p class="section-kicker">Configuração</p>
+                <h2>Parâmetros</h2>
+              </div>
+            </div>
+
+            <div class="actions actions-top">
+              <button type="button" id="random-board-btn" class="secondary">Gerar tabuleiro</button>
+              <button type="button" id="solve-btn">Resolver</button>
+            </div>
+
+            <div class="settings-groups">
+              <div class="settings-group">
+                <h3>Tabuleiro</h3>
+                <div class="field">
+                  <label for="size">Tamanho</label>
+                  <select id="size" name="size">
+                    <option value="3" selected>3×3</option>
+                    <option value="4">4×4</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <h3>População</h3>
+                <div class="field-grid">
+                  <div class="field">
+                    <label for="population-size">População</label>
+                    <input id="population-size" type="number" min="1" step="1" value="20" />
+                  </div>
+                  <div class="field">
+                    <label for="initial-chromosome-length">Comprimento inicial</label>
+                    <input id="initial-chromosome-length" type="number" min="0" step="1" value="10" />
+                  </div>
+                  <div class="field">
+                    <label for="tournament-size">Torneio</label>
+                    <input id="tournament-size" type="number" min="1" step="1" value="3" />
+                  </div>
+                  <div class="field">
+                    <label for="elites-count">Elites</label>
+                    <input id="elites-count" type="number" min="1" step="1" value="2" />
+                  </div>
+                  <div class="field">
+                    <label for="max-chromosome-length">Máximo</label>
+                    <input id="max-chromosome-length" type="number" min="0" step="1" value="50" />
+                  </div>
+                  <div class="field">
+                    <label for="max-generations">Gerações</label>
+                    <input id="max-generations" type="number" min="1" step="1" value="100" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <h3>Evolução</h3>
+                <div class="field-grid">
+                  <div class="field">
+                    <label for="crossover-rate">Cruzamento</label>
+                    <input id="crossover-rate" type="number" min="0" max="1" step="0.01" value="0.8" />
+                  </div>
+                  <div class="field">
+                    <label for="mutation-rate">Mutação</label>
+                    <input id="mutation-rate" type="number" min="0" max="1" step="0.01" value="0.1" />
+                  </div>
+                  <div class="field">
+                    <label for="time-limit">Tempo limite (s)</label>
+                    <input id="time-limit" type="number" min="0.01" step="0.01" placeholder="sem limite" />
+                  </div>
+                  <div class="field">
+                    <label for="random-seed">Semente</label>
+                    <input id="random-seed" type="number" step="1" placeholder="opcional" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div id="solver-status" class="solver-status hidden" aria-live="polite">
+              <span class="status-dot" aria-hidden="true"></span>
+              <span id="solver-status-text">Pensando...</span>
+            </div>
+
+          </aside>
+
+          <div class="panel board-panel">
+            <div class="panel-header">
+              <div>
+                <p class="section-kicker">Tabuleiro</p>
+                <h2>Estado atual</h2>
+              </div>
+              <span class="status-badge"><span class="status-dot" aria-hidden="true"></span> Pronto</span>
+            </div>
+
+            <div class="board-wrapper">
+              <div id="board" class="board" aria-label="Tabuleiro visual do puzzle"></div>
+            </div>
+
+            <div class="board-summary">
+              <span class="summary-label">Estado inicial</span>
+              <div id="initial-state-text" class="state-text">1, 2, 3, 4, 5, 6, 7, 0, 8</div>
+            </div>
+          </div>
+
+          <aside class="panel replay-panel">
+            <div id="result" class="result-box result-box-replay" aria-live="polite"></div>
+
+            <div class="panel-header compact replay-header">
+              <div>
+                <p class="section-kicker">Replay</p>
+                <h2>Reprodução da solução</h2>
+              </div>
+            </div>
+
+            <div class="replay-toolbar">
+              <button type="button" id="replay-start-btn">Iniciar</button>
+              <button type="button" id="replay-pause-btn" class="secondary">Pausar</button>
+              <button type="button" id="replay-resume-btn" class="secondary">Retomar</button>
+              <button type="button" id="replay-step-btn" class="secondary">Avançar 1</button>
+              <button type="button" id="replay-reset-btn" class="secondary">Reiniciar</button>
+            </div>
+
+            <div class="replay-controls">
+              <div class="speed-wrap">
+                <label for="replay-speed">Velocidade</label>
+                <input id="replay-speed" type="range" min="100" max="2000" step="50" value="500" />
+              </div>
+              <div class="replay-counter-wrap">
+                <span class="summary-label">Movimento</span>
+                <strong id="replay-counter">0 / 0</strong>
+              </div>
+              <span id="replay-speed-label" class="speed-label">500 ms</span>
+            </div>
+          </aside>
+        </section>
+
+        <section id="evolution-panel" class="panel evolution-panel hidden">
+          <div class="panel-header compact">
+            <div>
+              <p class="section-kicker">Analytics</p>
+              <h2>Acompanhamento da evolução</h2>
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <span>Gerações</span>
+              <strong id="generation-count">0</strong>
+            </div>
+            <div class="metric-card accent">
+              <span>Melhor fitness</span>
+              <strong id="best-fitness">0</strong>
+            </div>
+            <div class="metric-card">
+              <span>Fitness média</span>
+              <strong id="average-fitness">0</strong>
+            </div>
+            <div class="metric-card">
+              <span>Menor Manhattan</span>
+              <strong id="min-manhattan">0</strong>
+            </div>
+            <div class="metric-card">
+              <span>Melhor cromossomo</span>
+              <strong id="best-chromosome-length">0</strong>
+            </div>
+            <div class="metric-card">
+              <span>Diversidade</span>
+              <strong id="distinct-individuals">0</strong>
+            </div>
+            <div class="metric-card metric-card-wide">
+              <span>Motivo do encerramento</span>
+              <strong id="stop-reason">-</strong>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <div>
+                <span class="summary-label">Evolução da solução</span>
+                <h3>Melhor fitness vs média</h3>
+              </div>
+            </div>
+            <svg id="evolution-chart" viewBox="0 0 680 260" role="img" aria-label="Gráfico da evolução do algoritmo genético"></svg>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  </body>
+</html>

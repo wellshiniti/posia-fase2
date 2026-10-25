@@ -1,0 +1,10 @@
+case_id,initial_state,chromosome,final_state,goal_reached,initial_manhattan,final_manhattan,invalid_moves,chromosome_length,fitness,ranking_by_fitness,description
+solved,"[1, 2, 3, 4, 5, 6, 7, 8, 0]",['R'],"[1, 2, 3, 4, 5, 6, 7, 8, 0]",True,0,0,1,1,1.4975124378109452,1,resolve em um movimento
+distance_reduction,"[1, 2, 3, 4, 5, 6, 0, 8, 7]",['R'],"[1, 2, 3, 4, 5, 6, 8, 0, 7]",False,2,3,0,1,0.24937655860349128,4,reduz Manhattan sem resolver
+manhattan_increase,"[1, 2, 3, 4, 5, 6, 7, 0, 8]","['U', 'L']","[1, 2, 3, 0, 4, 6, 7, 5, 8]",False,1,3,0,2,0.24875621890547267,5,aumenta a distância de Manhattan
+same_initial_distance,"[1, 2, 3, 4, 0, 6, 7, 5, 8]","['L', 'L']","[1, 2, 3, 0, 4, 6, 7, 5, 8]",False,2,3,1,2,0.19920318725099603,7,mesma distância inicial e estado final diferente
+invalid_moves,"[1, 2, 3, 4, 5, 6, 7, 0, 8]","['U', 'D']","[1, 2, 3, 4, 5, 6, 7, 0, 8]",False,1,1,0,2,0.49504950495049505,2,movimentos inválidos
+same_state_different_lengths_a,"[1, 2, 3, 4, 5, 6, 7, 0, 8]","['L', 'L']","[1, 2, 3, 4, 5, 6, 0, 7, 8]",False,1,2,1,2,0.24875621890547267,6,estado final repetido com sequência mais curta
+same_state_different_lengths_b,"[1, 2, 3, 4, 5, 6, 7, 0, 8]","['L', 'L', 'R']","[1, 2, 3, 4, 5, 6, 7, 0, 8]",False,1,1,1,3,0.33003300330033003,3,mesmo estado final com sequência mais longa
+different_states_same_length,"[1, 2, 3, 4, 0, 6, 7, 5, 8]","['R', 'R']","[1, 2, 3, 4, 6, 0, 7, 5, 8]",False,2,3,1,2,0.19920318725099603,8,estados finais diferentes com mesmo comprimento
+mixed_penalties,"[1, 2, 3, 4, 5, 6, 0, 8, 7]","['R', 'U', 'R']","[1, 2, 3, 4, 6, 0, 8, 5, 7]",False,2,5,0,3,0.16583747927031509,9,"combinação de distância, comprimento e movimentos inválidos"

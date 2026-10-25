@@ -1,0 +1,6 @@
+id,initial_state,chromosome,final_state,manhattan_distance,invalid_moves,chromosome_length,fitness,note
+solved_sequence,"[1, 2, 3, 4, 5, 6, 7, 8, 0]",['R'],"[1, 2, 3, 4, 5, 6, 7, 8, 0]",0,1,1,1.4975124378109452,sequência que resolve o tabuleiro em um único passo
+distance_reduction,"[1, 2, 3, 4, 5, 6, 0, 8, 7]",['R'],"[1, 2, 3, 4, 5, 6, 8, 0, 7]",3,0,1,0.24937655860349128,reduz a distância Manhattan sem resolver
+no_progress,"[1, 2, 3, 4, 5, 6, 7, 0, 8]","['U', 'U']","[1, 0, 3, 4, 2, 6, 7, 5, 8]",3,0,2,0.24875621890547267,movimentos inválidos que não produzem progresso útil
+invalid_move_penalty,"[1, 2, 3, 4, 5, 6, 7, 0, 8]","['U', 'D']","[1, 2, 3, 4, 5, 6, 7, 0, 8]",1,0,2,0.49504950495049505,movimentos inválidos e sequência curta
+different_lengths,"[1, 2, 3, 4, 0, 6, 7, 5, 8]","['R', 'R']","[1, 2, 3, 4, 6, 0, 7, 5, 8]",3,1,2,0.19920318725099603,duas sequências de comprimentos distintos terminam em estados diferentes
