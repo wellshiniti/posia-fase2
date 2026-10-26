@@ -100,13 +100,13 @@ A validação é implementada em `Board.move()`. O método:
 
 ### Distância de Manhattan
 
-A função `Board.manhattan_distance()` calcula a soma dos deslocamentos de cada peça não vazia até a sua posição final no estado objetivo. No código do projeto, a peça `v` é comparada com sua posição esperada em `goal_state()`, em que o valor 1 deve ir para o índice 0, o valor 2 para o índice 1, e assim por diante. A fórmula equivalente implementada é:
+A função `Board.manhattan_distance()` calcula a soma dos deslocamentos de cada peça não vazia até sua posição final no estado objetivo. No código do projeto, a peça `v` é comparada com sua posição esperada em `goal_state()`, em que o valor 1 deve ir para o índice 0, o valor 2 para o índice 1, e assim por diante. A fórmula equivalente implementada é:
 
 $$
 \sum_{v=1}^{n^2-1} \left( |r(v) - r^*(v)| + |c(v) - c^*(v)| \right)
 $$
 
-onde `r(v)` e `c(v)` são as coordenadas atuais da peça `v`, e `r^*(v)`, `c^*(v)` são as coordenadas esperadas no estado objetivo. A peça zero é ignorada porque representa a célula vazia e não tem uma posição objetivo correspondente a uma peça.
+onde `r(v)` e `c(v)` são as coordenadas atuais da peça `v`, enquanto `r^*(v)` e `c^*(v)` são as coordenadas esperadas no estado objetivo. A peça zero é ignorada porque representa a célula vazia e não corresponde a uma peça que precise ser deslocada até uma posição objetivo.
 
 Em Python a lógica é exatamente esta:
 
