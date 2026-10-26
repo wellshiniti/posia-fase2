@@ -100,13 +100,26 @@ A validação é implementada em `Board.move()`. O método:
 
 ### Distância de Manhattan
 
-A função `Board.manhattan_distance()` calcula a soma das distâncias Manhattan das peças em relação à sua posição objetivo. O cálculo é:
+A função `Board.manhattan_distance()` calcula a soma dos deslocamentos de cada peça não vazia até a sua posição final no estado objetivo. No código do projeto, a peça `v` é comparada com sua posição esperada em `goal_state()`, em que o valor 1 deve ir para o índice 0, o valor 2 para o índice 1, e assim por diante. A fórmula equivalente implementada é:
 
 $$
-\sum_{i=1}^{n^2-1} (|r_i - r_i^*| + |c_i - c_i^*|)
+\sum_{v=1}^{n^2-1} \left( |r(v) - r^*(v)| + |c(v) - c^*(v)| \right)
 $$
 
-onde `r_i` e `c_i` são as coordenadas atuais da peça e `r_i^*`, `c_i^*` são as coordenadas no estado objetivo. A peça zero é ignorada.
+onde `r(v)` e `c(v)` são as coordenadas atuais da peça `v`, e `r^*(v)`, `c^*(v)` são as coordenadas esperadas no estado objetivo. A peça zero é ignorada porque representa a célula vazia e não tem uma posição objetivo correspondente a uma peça.
+
+Em Python a lógica é exatamente esta:
+
+```python
+for index, value in enumerate(self.state):
+    if value == 0:
+        continue
+
+    goal_index = value - 1
+    current_row, current_col = divmod(index, self.size)
+    goal_row, goal_col = divmod(goal_index, self.size)
+    total += abs(current_row - goal_row) + abs(current_col - goal_col)
+```
 
 ### Geração de tabuleiros aleatórios solucionáveis
 
