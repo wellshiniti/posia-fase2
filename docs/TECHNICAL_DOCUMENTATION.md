@@ -100,13 +100,19 @@ A validação é implementada em `Board.move()`. O método:
 
 ### Distância de Manhattan
 
-A função `Board.manhattan_distance()` calcula a soma das distâncias Manhattan das peças em relação à sua posição objetivo. O cálculo é:
+A função `Board.manhattan_distance()` calcula a soma dos deslocamentos de cada peça não vazia até sua posição final no estado objetivo. No código do projeto, a peça `v` é comparada com sua posição esperada em `goal_state()`, em que o valor 1 deve ir para o índice 0, o valor 2 para o índice 1, e assim por diante.
 
-$$
-\sum_{i=1}^{n^2-1} (|r_i - r_i^*| + |c_i - c_i^*|)
-$$
+A fórmula equivalente implementada é:
 
-onde `r_i` e `c_i` são as coordenadas atuais da peça e `r_i^*`, `c_i^*` são as coordenadas no estado objetivo. A peça zero é ignorada.
+**Distância de Manhattan = soma, para cada peça v de 1 até n² − 1, de:**
+
+`|r(v) - r_objetivo(v)| + |c(v) - c_objetivo(v)|`
+
+Onde:
+- `r(v)` e `c(v)` são, respectivamente, a linha e a coluna atuais da peça `v`.
+- `r_objetivo(v)` e `c_objetivo(v)` são, respectivamente, a linha e a coluna esperadas da peça `v` no estado objetivo.
+
+A peça zero é ignorada porque representa a célula vazia e não precisa ser deslocada até uma posição objetivo.
 
 ### Geração de tabuleiros aleatórios solucionáveis
 
